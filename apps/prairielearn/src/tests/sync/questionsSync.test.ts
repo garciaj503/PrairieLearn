@@ -2,6 +2,7 @@ import * as path from 'path';
 
 import { assert } from 'chai';
 import fs from 'fs-extra';
+import { v4 as uuidv4 } from 'uuid';
 
 import { idsEqual } from '../../lib/id.js';
 import * as helperDb from '../helperDb.js';
@@ -13,7 +14,7 @@ import * as util from './util.js';
  */
 function makeQuestion(courseData: util.CourseData): util.Question {
   return {
-    uuid: '1e0724c3-47af-4ca3-9188-5227ef0c5549',
+    uuid: uuidv4(),
     title: 'Test question',
     type: 'v3',
     topic: courseData.course.topics[0].name,
@@ -78,6 +79,7 @@ describe('Question syncing', () => {
     let syncedTags = await util.dumpTable('tags');
     let syncedTag = syncedTags.find((tag) => tag.name === missingTagName);
     assert.isOk(syncedTag);
+    assert.isTrue(syncedTag.implicit);
     assert.isNotEmpty(syncedTag?.description, 'tag should not have empty description');
 
     // Subsequent syncs with the same data should succeed as well
@@ -85,6 +87,7 @@ describe('Question syncing', () => {
     syncedTags = await util.dumpTable('tags');
     syncedTag = syncedTags.find((tag) => tag.name === missingTagName);
     assert.isOk(syncedTag);
+    assert.isTrue(syncedTag.implicit);
 
     // When missing tags are no longer used in any questions, they should
     // be removed from the DB
@@ -105,13 +108,15 @@ describe('Question syncing', () => {
     let syncedTopics = await util.dumpTable('topics');
     let syncedTopic = syncedTopics.find((topic) => topic.name === missingTopicName);
     assert.isOk(syncedTopic);
-    assert.isNotEmpty(syncedTopic?.description, 'tag should not have empty description');
+    assert.isTrue(syncedTopic.implicit);
+    assert.isNotEmpty(syncedTopic?.description, 'topic should not have empty description');
 
     // Subsequent syncs with the same data should succeed as well
     await util.overwriteAndSyncCourseData(courseData, courseDir);
     syncedTopics = await util.dumpTable('topics');
     syncedTopic = syncedTopics.find((topic) => topic.name === missingTopicName);
     assert.isOk(syncedTopic);
+    assert.isTrue(syncedTopic.implicit);
 
     // When missing topics are no longer used in any questions, they should
     // be removed from the DB
@@ -183,6 +188,7 @@ describe('Question syncing', () => {
     const syncedTopics = await util.dumpTable('topics');
     const syncedTopic = syncedTopics.find((t) => t.name === newTopic.name);
     assert.equal(newSyncedQuestion?.topic_id, syncedTopic?.id);
+    assert.isTrue(syncedTopic?.implicit);
   });
 
   it('preserves question tag even if question tag is deleted', async () => {
@@ -211,6 +217,7 @@ describe('Question syncing', () => {
     const syncedQuestionTag = syncedQuestionTags.find(
       (qt) => idsEqual(qt.question_id, newSyncedQuestion?.id) && idsEqual(qt.tag_id, syncedTag?.id),
     );
+    assert.isTrue(syncedTag?.implicit);
     assert.ok(syncedQuestionTag);
   });
 

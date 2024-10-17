@@ -83,7 +83,7 @@ async function ensureImage() {
   } catch (e) {
     if (e.statusCode === 404) {
       logger.info('Image not found, pulling from registry');
-      const start = Date.now();
+      const start = performance.now();
       const ecr = new ECRClient(makeAwsClientConfig());
       const dockerAuth = config.cacheImageRegistry ? await setupDockerAuth(ecr) : null;
       const stream = await docker.createImage(dockerAuth, { fromImage: imageName });
@@ -91,7 +91,7 @@ async function ensureImage() {
         docker.modem.followProgress(
           stream,
           (err) => {
-            const elapsed = Math.round((Date.now() - start) / 1000);
+            const elapsed = Math.round((performance.now() - start) / 1000);
             if (err) {
               logger.error(`Error pulling image after ${elapsed} seconds`, err);
               reject(err);
@@ -151,6 +151,10 @@ export class CodeCallerContainer {
     this._checkState();
 
     this.debug(`exit constructor(), state: ${String(this.state)}, uuid: ${this.uuid}`);
+  }
+
+  getCoursePath() {
+    return this.coursePath;
   }
 
   /**
@@ -293,11 +297,11 @@ export class CodeCallerContainer {
       // was restarted, we can slightly optimize things by skipping the
       // restart. This is safe, as no user-provided code will have been
       // loaded into the Python interpreter.
-      this.debug(`exit restart() - skipping since no calls recorded since last restart`);
+      this.debug('exit restart() - skipping since no calls recorded since last restart');
       return true;
     } else if (this.state === CREATED) {
       // no need to restart if we don't have a worker
-      this.debug(`exit restart()`);
+      this.debug('exit restart()');
       return true;
     } else if (this.state === WAITING) {
       const { result } = await this.call('restart', null, null, 'restart', []);
@@ -752,7 +756,7 @@ async function cleanupMountDirectories() {
         try {
           debug(`removing bind mount at ${absolutePath}`);
           await bindMount.umount(absolutePath);
-        } catch (e) {
+        } catch {
           // Ignore this, it was hopefully unmounted successfully before
         }
 

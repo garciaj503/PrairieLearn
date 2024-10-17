@@ -3,13 +3,15 @@ import { FeatureManager } from './manager.js';
 const featureNames = [
   'course-instance-billing',
   'enforce-plan-grants-for-questions',
-  // Can only be applied to courses/institutions.
+  // Should only be applied to courses/institutions.
   'process-questions-in-worker',
   'question-sharing',
-  'allow-rpy2',
-  // Can only be applied to institutions.
+  'ai-grading',
+  'disable-public-workspaces',
+  'ai-question-generation',
+  'bootstrap-4',
+  // Should only be applied to institutions.
   'lti13',
-  'terms-clickthrough',
 ] as const;
 
 const features = new FeatureManager(featureNames);

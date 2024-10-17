@@ -1,7 +1,11 @@
 import { z } from 'zod';
 
 import { html } from '@prairielearn/html';
-import { renderEjs } from '@prairielearn/html-ejs';
+
+import { HeadContents } from '../../components/HeadContents.html.js';
+import { Navbar } from '../../components/Navbar.html.js';
+import { AssessmentSyncErrorsAndWarnings } from '../../components/SyncErrorsAndWarnings.html.js';
+import { config } from '../../lib/config.js';
 
 export const AssessmentAccessRulesSchema = z.object({
   mode: z.string(),
@@ -31,29 +35,26 @@ export function InstructorAssessmentAccess({
     <!doctype html>
     <html lang="en">
       <head>
-        ${renderEjs(import.meta.url, "<%- include('../partials/head'); %>", resLocals)}
+        ${HeadContents({ resLocals })}
       </head>
       <body>
-        <script>
-          $(function () {
-            $('[data-toggle="popover"]').popover({ sanitize: false });
-          });
-        </script>
-        ${renderEjs(import.meta.url, "<%- include('../partials/navbar'); %>", resLocals)}
+        ${Navbar({ resLocals })}
         <main id="content" class="container-fluid">
-          ${renderEjs(
-            import.meta.url,
-            "<%- include('../partials/assessmentSyncErrorsAndWarnings'); %>",
-            resLocals,
-          )}
+          ${AssessmentSyncErrorsAndWarnings({
+            authz_data: resLocals.authz_data,
+            assessment: resLocals.assessment,
+            courseInstance: resLocals.course_instance,
+            course: resLocals.course,
+            urlPrefix: resLocals.urlPrefix,
+          })}
 
           <div class="card mb-4">
             <div class="card-header bg-primary text-white d-flex align-items-center">
-              ${resLocals.assessment_set.name} ${resLocals.assessment.number}: Access
+              <h1>${resLocals.assessment_set.name} ${resLocals.assessment.number}: Access</h1>
             </div>
 
             <div class="table-responsive">
-              <table class="table table-sm table-hover">
+              <table class="table table-sm table-hover" aria-label="Access rules">
                 <thead>
                   <tr>
                     <th>Mode</th>
@@ -84,19 +85,17 @@ export function InstructorAssessmentAccess({
                           resLocals.authz_data.has_course_instance_permission_view
                             ? access_rule.uids
                             : html`
-                                <a
-                                  role="button"
+                                <button
+                                  type="button"
                                   class="btn btn-xs btn-warning"
-                                  tabindex="0"
                                   data-toggle="popover"
-                                  data-trigger="focus"
                                   data-container="body"
                                   data-placement="auto"
                                   title="Hidden UIDs"
                                   data-content="This access rule is specific to individual students. You need permission to view student data in order to see which ones."
                                 >
                                   Hidden
-                                </a>
+                                </button>
                               `}
                         </td>
                         <td>${access_rule.start_date}</td>
@@ -109,14 +108,13 @@ export function InstructorAssessmentAccess({
                           ${access_rule.pt_exam_name
                             ? html`
                                 <a
-                                  href="${resLocals.config
-                                    .ptHost}/pt/course/${access_rule.pt_course_id}/staff/exam/${access_rule.pt_exam_id}"
+                                  href="${config.ptHost}/pt/course/${access_rule.pt_course_id}/staff/exam/${access_rule.pt_exam_id}"
                                 >
                                   ${access_rule.pt_course_name}: ${access_rule.pt_exam_name}
                                 </a>
                               `
                             : access_rule.exam_uuid
-                              ? resLocals.devMode
+                              ? config.devMode
                                 ? access_rule.exam_uuid
                                 : html`
                                     <span class="text-danger">

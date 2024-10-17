@@ -1,4 +1,4 @@
-import { Question, Course, Variant, Submission } from '../lib/db-types.js';
+import { type Question, type Course, type Variant, type Submission } from '../lib/db-types.js';
 
 export type QuestionType = Question['type'];
 export type EffectiveQuestionType = 'Calculation' | 'Freeform';
@@ -77,7 +77,7 @@ export interface QuestionServer {
     renderSelection: { question: boolean; answer: boolean; submissions: boolean },
     variant: Variant,
     question: Question,
-    submission: Submission,
+    submission: Submission | null,
     submissions: Submission[],
     course: Course,
     locals: Record<string, any>,

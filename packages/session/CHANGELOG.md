@@ -1,5 +1,35 @@
 # @prairielearn/session
 
+## 3.0.6
+
+### Patch Changes
+
+- 4ab7483: Remove remnants of `express-session` package
+
+## 3.0.5
+
+### Patch Changes
+
+- 852c2e2: Upgrade all JavaScript dependencies
+
+## 3.0.4
+
+### Patch Changes
+
+- a8438ff: Upgrade all JavaScript dependencies
+
+## 3.0.3
+
+### Patch Changes
+
+- 24a93b8: Upgrade all JavaScript dependencies
+
+## 3.0.2
+
+### Patch Changes
+
+- 0f7c90f: Upgrade all JavaScript dependencies
+
 ## 3.0.1
 
 ### Patch Changes

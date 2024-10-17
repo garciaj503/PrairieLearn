@@ -1,10 +1,8 @@
-import { exec } from 'child_process';
 import * as path from 'path';
 
-import * as async from 'async';
-import ERR from 'async-stacktrace';
 import { assert } from 'chai';
 import * as cheerio from 'cheerio';
+import { execa } from 'execa';
 import fs from 'fs-extra';
 import klaw from 'klaw';
 import fetch from 'node-fetch';
@@ -57,28 +55,7 @@ const testEditData = [
     ]),
   },
   {
-    button: 'changeQidButton',
-    formSelector: 'form[name="change-id-form"]',
-    data: {
-      id: 'newQuestion',
-    },
-    action: 'change_id',
-    info: 'questions/newQuestion/info.json',
-    files: new Set([
-      'README.md',
-      'infoCourse.json',
-      'courseInstances/Fa18/infoCourseInstance.json',
-      'courseInstances/Fa18/assessments/HW1/infoAssessment.json',
-      'questions/test/question/info.json',
-      'questions/test/question/question.html',
-      'questions/test/question/server.py',
-      'questions/newQuestion/info.json',
-      'questions/newQuestion/question.html',
-      'questions/newQuestion/server.py',
-    ]),
-  },
-  {
-    formSelector: '#delete-question-form',
+    formSelector: '#deleteQuestionModal',
     action: 'delete_question',
     files: new Set([
       'README.md',
@@ -92,7 +69,7 @@ const testEditData = [
   },
   {
     url: `${courseInstanceUrl}/question/1/settings`,
-    button: 'copyQuestionButton',
+    button: '#copyQuestionButton',
     formSelector: 'form[name="copy-question-form"]',
     data: {
       to_course_id: 1,
@@ -113,7 +90,7 @@ const testEditData = [
     ]),
   },
   {
-    formSelector: '#delete-question-form',
+    formSelector: '#deleteQuestionModal',
     action: 'delete_question',
     files: new Set([
       'README.md',
@@ -139,48 +116,6 @@ const testEditData = [
       'questions/test/question/question.html',
       'questions/test/question/server.py',
       'courseInstances/Fa18/assessments/New_1/infoAssessment.json',
-    ]),
-  },
-  {
-    button: 'changeAidButton',
-    formSelector: 'form[name="change-id-form"]',
-    data: {
-      id: 'newAssessment/nested',
-    },
-    action: 'change_id',
-    info: 'courseInstances/Fa18/assessments/newAssessment/nested/infoAssessment.json',
-    files: new Set([
-      'README.md',
-      'infoCourse.json',
-      'courseInstances/Fa18/infoCourseInstance.json',
-      'courseInstances/Fa18/assessments/HW1/infoAssessment.json',
-      'questions/test/question/info.json',
-      'questions/test/question/question.html',
-      'questions/test/question/server.py',
-      'courseInstances/Fa18/assessments/newAssessment/nested/infoAssessment.json',
-    ]),
-  },
-  // This second rename specifically tests the case where an existing assessment
-  // is renamed such that it leaves behind an empty directory. We want to make
-  // sure that that empty directory is cleaned up and not treated as an actual
-  // assessment during sync.
-  {
-    button: 'changeAidButton',
-    formSelector: 'form[name="change-id-form"]',
-    data: {
-      id: 'newAssessmentNotNested',
-    },
-    action: 'change_id',
-    info: 'courseInstances/Fa18/assessments/newAssessmentNotNested/infoAssessment.json',
-    files: new Set([
-      'README.md',
-      'infoCourse.json',
-      'courseInstances/Fa18/infoCourseInstance.json',
-      'courseInstances/Fa18/assessments/HW1/infoAssessment.json',
-      'questions/test/question/info.json',
-      'questions/test/question/question.html',
-      'questions/test/question/server.py',
-      'courseInstances/Fa18/assessments/newAssessmentNotNested/infoAssessment.json',
     ]),
   },
   {
@@ -229,7 +164,7 @@ const testEditData = [
     url: courseInstancesUrl,
     formSelector: 'form[name="add-course-instance-form"]',
     action: 'add_course_instance',
-    info: `courseInstances/New_1/infoCourseInstance.json`,
+    info: 'courseInstances/New_1/infoCourseInstance.json',
     files: new Set([
       'README.md',
       'infoCourse.json',
@@ -238,11 +173,11 @@ const testEditData = [
       'questions/test/question/info.json',
       'questions/test/question/question.html',
       'questions/test/question/server.py',
-      `courseInstances/New_1/infoCourseInstance.json`,
+      'courseInstances/New_1/infoCourseInstance.json',
     ]),
   },
   {
-    button: 'changeCiidButton',
+    button: '.js-change-id-button',
     formSelector: 'form[name="change-id-form"]',
     data: {
       id: 'newCourseInstance',
@@ -309,11 +244,8 @@ describe('test course editor', function () {
   this.timeout(20000);
 
   describe('not the example course', function () {
-    before('create test course files', function (callback) {
-      createCourseFiles((err) => {
-        if (ERR(err, callback)) return;
-        callback(null);
-      });
+    before('create test course files', async () => {
+      await createCourseFiles();
     });
 
     before('set up testing server', helperServer.before(courseDir));
@@ -397,7 +329,7 @@ function testEdit(params) {
     }
     it('should have a CSRF token', () => {
       if (params.button) {
-        let elemList = locals.$(`button[id="${params.button}"]`);
+        let elemList = locals.$(params.button);
         assert.lengthOf(elemList, 1);
 
         const $ = cheerio.load(elemList[0].attribs['data-content']);
@@ -433,7 +365,15 @@ function testEdit(params) {
     });
   });
 
-  waitForJobSequence(locals, 'Success');
+  describe('The job sequence', () => {
+    it('should have an id', async () => {
+      const result = await sqldb.queryOneRowAsync(sql.select_last_job_sequence, []);
+      locals.job_sequence_id = result.rows[0].id;
+    });
+    it('should complete', async () => {
+      await helperServer.waitForJobSequenceSuccess(locals.job_sequence_id);
+    });
+  });
 
   describe('validate', () => {
     it('should not have any sync warnings or errors', async () => {
@@ -443,14 +383,10 @@ function testEdit(params) {
       assert.isEmpty(results.rows);
     });
 
-    it('should pull into dev directory', function (callback) {
-      const execOptions = {
+    it('should pull into dev directory', async () => {
+      await execa('git', ['pull'], {
         cwd: courseDevDir,
         env: process.env,
-      };
-      exec(`git pull`, execOptions, (err) => {
-        if (ERR(err, callback)) return;
-        callback(null);
       });
     });
 
@@ -469,119 +405,39 @@ function testEdit(params) {
   });
 }
 
-function createCourseFiles(callback) {
-  async.series(
-    [
-      async () => await deleteCourseFiles(),
-      (callback) => {
-        const execOptions = {
-          cwd: '.',
-          env: process.env,
-        };
-        // Ensure that the default branch is master, regardless of how git
-        // is configured on the host machine.
-        exec(
-          `git -c "init.defaultBranch=master" init --bare ${courseOriginDir}`,
-          execOptions,
-          (err) => {
-            if (ERR(err, callback)) return;
-            callback(null);
-          },
-        );
-      },
-      (callback) => {
-        const execOptions = {
-          cwd: '.',
-          env: process.env,
-        };
-        exec(`git clone ${courseOriginDir} ${courseLiveDir}`, execOptions, (err) => {
-          if (ERR(err, callback)) return;
-          callback(null);
-        });
-      },
-      async () => {
-        await fs.copy(courseTemplateDir, courseLiveDir, { overwrite: false });
-      },
-      (callback) => {
-        const execOptions = {
-          cwd: courseLiveDir,
-          env: process.env,
-        };
-        exec(`git add -A`, execOptions, (err) => {
-          if (ERR(err, callback)) return;
-          callback(null);
-        });
-      },
-      (callback) => {
-        const execOptions = {
-          cwd: courseLiveDir,
-          env: process.env,
-        };
-        exec(`git commit -m "initial commit"`, execOptions, (err) => {
-          if (ERR(err, callback)) return;
-          callback(null);
-        });
-      },
-      (callback) => {
-        const execOptions = {
-          cwd: courseLiveDir,
-          env: process.env,
-        };
-        exec(`git push`, execOptions, (err) => {
-          if (ERR(err, callback)) return;
-          callback(null);
-        });
-      },
-      (callback) => {
-        const execOptions = {
-          cwd: '.',
-          env: process.env,
-        };
-        exec(`git clone ${courseOriginDir} ${courseDevDir}`, execOptions, (err) => {
-          if (ERR(err, callback)) return;
-          callback(null);
-        });
-      },
-    ],
-    (err) => {
-      if (ERR(err, callback)) return;
-      callback(null);
-    },
-  );
+async function createCourseFiles() {
+  await deleteCourseFiles();
+  // Ensure that the default branch is master, regardless of how git
+  // is configured on the host machine.
+  await execa('git', ['-c', 'init.defaultBranch=master', 'init', '--bare', courseOriginDir], {
+    cwd: '.',
+    env: process.env,
+  });
+  await execa('git', ['clone', courseOriginDir, courseLiveDir], {
+    cwd: '.',
+    env: process.env,
+  });
+  await fs.copy(courseTemplateDir, courseLiveDir, { overwrite: false });
+  await execa('git', ['add', '-A'], {
+    cwd: courseLiveDir,
+    env: process.env,
+  });
+  await execa('git', ['commit', '-m', 'initial commit'], {
+    cwd: courseLiveDir,
+    env: process.env,
+  });
+  await execa('git', ['push'], {
+    cwd: courseLiveDir,
+    env: process.env,
+  });
+  await execa('git', ['clone', courseOriginDir, courseDevDir], {
+    cwd: '.',
+    env: process.env,
+  });
 }
 
 async function deleteCourseFiles() {
   await fs.remove(courseOriginDir);
   await fs.remove(courseLiveDir);
   await fs.remove(courseDevDir);
-}
-
-function waitForJobSequence(locals, expectedResult) {
-  describe('The job sequence', function () {
-    it('should have an id', function (callback) {
-      sqldb.queryOneRow(sql.select_last_job_sequence, [], (err, result) => {
-        if (ERR(err, callback)) return;
-        locals.job_sequence_id = result.rows[0].id;
-        callback(null);
-      });
-    });
-    it('should complete', function (callback) {
-      const checkComplete = function () {
-        const params = { job_sequence_id: locals.job_sequence_id };
-        sqldb.queryOneRow(sql.select_job_sequence, params, (err, result) => {
-          if (ERR(err, callback)) return;
-          locals.job_sequence_status = result.rows[0].status;
-          if (locals.job_sequence_status === 'Running') {
-            setTimeout(checkComplete, 10);
-          } else {
-            callback(null);
-          }
-        });
-      };
-      setTimeout(checkComplete, 10);
-    });
-    it(`should have result "${expectedResult}"`, function () {
-      assert.equal(locals.job_sequence_status, expectedResult);
-    });
-  });
 }

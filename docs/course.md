@@ -94,6 +94,16 @@ This file specifies basic information about the course:
       "color": "orange2",
       "description": "Answering requires estimating a quantity."
     }
+  ],
+  "sharingSets": [
+    {
+      "name": "python-exercises",
+      "description": "Python exercises for sharing"
+    },
+    {
+      "name": "final-exam",
+      "description": "Questions that can be used on a final exam"
+    }
   ]
 }
 ```
@@ -128,7 +138,7 @@ The following list of standardized assessments sets is automatically included in
 | abbreviation | name            | purpose                                                 |
 | ------------ | --------------- | ------------------------------------------------------- |
 | `HW`         | Homework        | Weekly homeworks done at home.                          |
-| `MP`         | Machine Problem | Weekly coding assisgnments done outside of class.       |
+| `MP`         | Machine Problem | Weekly coding assignments done outside of class.        |
 | `Q`          | Quiz            | Short frequent quizzes.                                 |
 | `PQ`         | Practice Quiz   | Practice quizzes.                                       |
 | `E`          | Exam            | Long-form midterm or final exams.                       |
@@ -260,9 +270,9 @@ Each question in the course has a topic from the list specified in the `infoCour
 
 | Property      | Description                                                                                       |
 | ------------- | ------------------------------------------------------------------------------------------------- |
-| `name`        | Brief name for the topic. Shorter is better. Should be in sentence case (leading captial letter). |
+| `name`        | Brief name for the topic. Shorter is better. Should be in sentence case (leading capital letter). |
 | `color`       | The color scheme for this topic (see below for choices).                                          |
-| `description` | An explanation of what the topic includes, for human referance.                                   |
+| `description` | An explanation of what the topic includes, for human reference.                                   |
 
 For example, topics could be listed like:
 
@@ -291,7 +301,7 @@ Each question can have zero, one, or many tags associated with it. The propertie
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`        | Brief name for the tag. Tags should have very short names (preferably just a single word) because there might be many of them on one question. Should typically be in lower case (e.g., `drawing`) or an uppercase abbreviation (e.g., `MC`). |
 | `color`       | The color scheme for this tag (see below for choices).                                                                                                                                                                                        |
-| `description` | An explanation of what the tag means, for human referance.                                                                                                                                                                                    |
+| `description` | An explanation of what the tag means, for human reference.                                                                                                                                                                                    |
 
 ### Standardized tag names
 
@@ -348,6 +358,36 @@ You can add more tags to your course by listing them in the `infoCourse.json` fi
 ```
 
 The tag order in `infoCourse.json` is the order in which the tags will be listed within PrairieLearn. If you want to change the order of your tags or standardized tags then you can re-list them in whatever order you like.
+
+## Sharing Sets
+
+Questions can be added to sharing sets to enable other courses to use your questions in their assessments. Sharing sets are designed for sharing questions only to specific courses, if you would like to make questions available for anyone to uses, you should make them publicly shared as explained in the [question documentation](question.md), or the [sharing documentation](questionSharing.md).
+
+| Property      | Description                                                                                                                                                                                          |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | Brief descriptive name for the sharing set. You could say something about the type of questions you are grouping together, or about the type of course you would want to share the sharing set with. |
+| `description` | Additional explanation of what the sharing set is for, for human reference.                                                                                                                          |
+
+### Adding Sharing Sets
+
+You can add sharing sets to your course by listing them in the `infoCourse.json` file. For example:
+
+```json
+{
+  "sharingSets": [
+    {
+      "name": "python-exercises",
+      "description": "Python exercises for sharing"
+    },
+    {
+      "name": "final-exam",
+      "description": "Questions that can be used on a final exam"
+    }
+  ]
+}
+```
+
+At this time, sharing sets cannot be renamed or removed from `infoCourse.json` once they have been added, because deleting a sharing set shared to another course could break assessments in that course.
 
 ## Timezone
 

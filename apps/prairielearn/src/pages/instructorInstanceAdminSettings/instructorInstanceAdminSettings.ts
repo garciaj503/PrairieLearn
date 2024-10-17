@@ -2,7 +2,6 @@ import * as path from 'path';
 
 import * as express from 'express';
 import asyncHandler from 'express-async-handler';
-import QR from 'qrcode-svg';
 import { z } from 'zod';
 
 import * as error from '@prairielearn/error';
@@ -34,15 +33,9 @@ router.get(
 
     const host = getCanonicalHost(req);
     const studentLink = new URL(
-      res.locals.plainUrlPrefix + '/course_instance/' + res.locals.course_instance.id,
+      `${res.locals.plainUrlPrefix}/course_instance/${res.locals.course_instance.id}`,
       host,
     ).href;
-
-    const studentLinkQRCode = new QR({
-      content: studentLink,
-      width: 512,
-      height: 512,
-    }).svg();
 
     const infoCourseInstancePath = encodePath(
       path.join(
@@ -56,7 +49,6 @@ router.get(
         resLocals: res.locals,
         shortNames,
         studentLink,
-        studentLinkQRCode,
         infoCourseInstancePath,
       }),
     );
@@ -74,7 +66,7 @@ router.post(
       const serverJob = await editor.prepareServerJob();
       try {
         await editor.executeWithServerJob(serverJob);
-      } catch (err) {
+      } catch {
         res.redirect(res.locals.urlPrefix + '/edit_error/' + serverJob.jobSequenceId);
         return;
       }
@@ -104,7 +96,7 @@ router.post(
       try {
         await editor.executeWithServerJob(serverJob);
         res.redirect(`${res.locals.plainUrlPrefix}/course/${res.locals.course.id}/course_admin`);
-      } catch (err) {
+      } catch {
         res.redirect(res.locals.urlPrefix + '/edit_error/' + serverJob.jobSequenceId);
       }
     } else if (req.body.__action === 'change_id') {
@@ -120,7 +112,7 @@ router.post(
       let ciid_new;
       try {
         ciid_new = path.normalize(req.body.id);
-      } catch (err) {
+      } catch {
         throw new error.HttpStatusError(
           400,
           `Invalid CIID (could not be normalized): ${req.body.id}`,
@@ -138,7 +130,7 @@ router.post(
         try {
           await editor.executeWithServerJob(serverJob);
           res.redirect(req.originalUrl);
-        } catch (err) {
+        } catch {
           res.redirect(res.locals.urlPrefix + '/edit_error/' + serverJob.jobSequenceId);
         }
       }

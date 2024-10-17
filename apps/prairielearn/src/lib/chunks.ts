@@ -16,12 +16,12 @@ import * as sqldb from '@prairielearn/postgres';
 
 import { getLockNameForCoursePath } from '../models/course.js';
 import * as courseDB from '../sync/course-db.js';
-import { CourseData } from '../sync/course-db.js';
+import { type CourseData } from '../sync/course-db.js';
 
 import { downloadFromS3, makeS3ClientConfig } from './aws.js';
 import { chalk, chalkDim } from './chalk.js';
 import { config } from './config.js';
-import { createServerJob, ServerJob } from './server-jobs.js';
+import { createServerJob, type ServerJob } from './server-jobs.js';
 
 const sql = sqldb.loadSqlEquiv(import.meta.url);
 
@@ -270,7 +270,7 @@ export async function identifyChangedFiles(
   // repository. To do this, we query git itself for the root of the repository,
   // construct an absolute path for each file, and then trim off the course path.
   const { stdout: topLevelStdout } = await util.promisify(child_process.exec)(
-    `git rev-parse --show-toplevel`,
+    'git rev-parse --show-toplevel',
     { cwd: coursePath },
   );
   const topLevel = topLevelStdout.trim();
@@ -816,7 +816,7 @@ export async function generateAllChunksForCourseList(course_ids: string[], authn
  * Helper function to generate all chunks for a single course.
  */
 async function _generateAllChunksForCourseWithJob(course_id: string, job: ServerJob) {
-  job.info(chalk.bold(`Looking up course directory`));
+  job.info(chalk.bold('Looking up course directory'));
   const result = await sqldb.queryOneRowAsync(sql.select_course_dir, { course_id });
   let courseDir = result.rows[0].path;
   job.info(chalkDim(`Found course directory: ${courseDir}`));
@@ -827,13 +827,13 @@ async function _generateAllChunksForCourseWithJob(course_id: string, job: Server
   job.info(chalk.bold(`Acquiring lock ${lockName}`));
 
   await namedLocks.doWithLock(lockName, {}, async () => {
-    job.info(chalkDim(`Acquired lock`));
+    job.info(chalkDim('Acquired lock'));
 
     job.info(chalk.bold(`Loading course data from ${courseDir}`));
     const courseData = await courseDB.loadFullCourse(course_id, courseDir);
-    job.info(chalkDim(`Loaded course data`));
+    job.info(chalkDim('Loaded course data'));
 
-    job.info(chalk.bold(`Generating all chunks`));
+    job.info(chalk.bold('Generating all chunks'));
     const chunkOptions = {
       coursePath: courseDir,
       courseId: String(course_id),
@@ -841,10 +841,10 @@ async function _generateAllChunksForCourseWithJob(course_id: string, job: Server
     };
     const chunkChanges = await updateChunksForCourse(chunkOptions);
     logChunkChangesToJob(chunkChanges, job);
-    job.info(chalkDim(`Generated all chunks`));
+    job.info(chalkDim('Generated all chunks'));
   });
 
-  job.info(chalkDim(`Released lock`));
+  job.info(chalkDim('Released lock'));
 
   job.info(chalk.green(`Successfully generated chunks for course ID = ${course_id}`));
 }

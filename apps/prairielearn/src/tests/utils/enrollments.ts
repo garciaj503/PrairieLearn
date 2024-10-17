@@ -8,7 +8,7 @@ import { queryRow } from '@prairielearn/postgres';
 import '../helperServer';
 import { config } from '../../lib/config.js';
 
-import { AuthUser, withUser } from './auth.js';
+import { type AuthUser, withUser } from './auth.js';
 import { getCsrfToken } from './csrf.js';
 
 const siteUrl = 'http://localhost:' + config.serverPort;
@@ -55,6 +55,7 @@ export async function enrollRandomUsers(courseInstanceId: string, count: number)
       name: `Student ${i}`,
       uid: `student${number}@example.com`,
       uin: `student-${i}`,
+      email: `student${number}@example.com`,
     });
     assert.isOk(res.ok);
   }

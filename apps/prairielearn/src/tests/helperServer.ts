@@ -32,7 +32,7 @@ config.startServer = false;
 // Pick a unique port based on the Mocha worker ID.
 config.serverPort = (3007 + Number.parseInt(process.env.MOCHA_WORKER_ID ?? '0', 10)).toString();
 
-export function before(courseDir: string = TEST_COURSE_PATH): () => Promise<void> {
+export function before(courseDir: string | string[] = TEST_COURSE_PATH): () => Promise<void> {
   return async () => {
     debug('before()');
     try {
@@ -54,7 +54,13 @@ export function before(courseDir: string = TEST_COURSE_PATH): () => Promise<void
       await server.insertDevUser();
 
       debug('before(): sync from disk');
-      await helperCourse.syncCourse(courseDir);
+      if (Array.isArray(courseDir)) {
+        for (const dir of courseDir) {
+          await helperCourse.syncCourse(dir);
+        }
+      } else {
+        await helperCourse.syncCourse(courseDir);
+      }
 
       debug('before(): set up load estimators');
       load.initEstimator('request', 1);
@@ -144,15 +150,19 @@ export async function waitForJobSequence(job_sequence_id) {
   return job_sequence;
 }
 
-export async function waitForJobSequenceSuccess(job_sequence_id) {
+export async function waitForJobSequenceStatus(job_sequence_id, status: 'Success' | 'Error') {
   const job_sequence = await waitForJobSequence(job_sequence_id);
 
   // In the case of a failure, print more information to aid debugging.
-  if (job_sequence.status !== 'Success') {
+  if (job_sequence.status !== status) {
     console.log(job_sequence);
     const result = await sqldb.queryAsync(sql.select_jobs, { job_sequence_id });
     console.log(result.rows);
   }
 
-  assert.equal(job_sequence.status, 'Success');
+  assert.equal(job_sequence.status, status);
+}
+
+export async function waitForJobSequenceSuccess(job_sequence_id) {
+  await waitForJobSequenceStatus(job_sequence_id, 'Success');
 }

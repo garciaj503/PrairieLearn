@@ -77,6 +77,13 @@ def process(
     # `original_data` as needed.
     original_data = copy.deepcopy(data)
 
+    # We'll cache instantiated modules for two reasons:
+    # - This allows us to avoid re-reading/compiling/executing them if the same
+    #   element is used multiple times.
+    # - This allows element code to maintain state across multiple calls. This is useful
+    #   specifically for elements that want to maintain a cache of expensive-to-compute data.
+    mod_cache: dict[pathlib.Path, dict[str, Any]] = {}
+
     def process_element(
         element: lxml.html.HtmlElement,
     ) -> None | str | lxml.html.HtmlElement:
@@ -110,13 +117,18 @@ def process(
                 sys.path.insert(0, str(pathlib.Path(course_path) / "serverFilesCourse"))
             sys.path.insert(0, str(element_path))
 
-            mod = {}
-            with open(element_controller_path, encoding="utf-8") as inf:
-                # use compile to associate filename with code object, so the
-                # filename appears in the traceback if there is an error
-                # (https://stackoverflow.com/a/437857)
-                code = compile(inf.read(), element_controller_path, "exec")
+            mod = mod_cache.get(element_controller_path)
+            if mod is None:
+                mod = {}
+
+                with open(element_controller_path, encoding="utf-8") as inf:
+                    # Use `compile` to associate filename with code object, so the
+                    # filename appears in the traceback if there is an error:
+                    # https://stackoverflow.com/a/437857
+                    code = compile(inf.read(), element_controller_path, "exec")
+
                 exec(code, mod)
+                mod_cache[element_controller_path] = mod
 
             if phase not in mod:
                 return None
@@ -185,18 +197,16 @@ def prepare_data(
     # modify the source data.
     data["extensions"] = copy.deepcopy(element_extensions.get(element.tag, {}))
 
-    # `base_url` and associated values are only present during the render phase.
+    # `*_url` options are only present during the render phase.
     if phase == "render":
         client_files_element_url = (
-            pathlib.Path(data["options"]["base_url"])
-            / "elements"
+            pathlib.Path(data["options"]["course_element_files_url"])
             / element_info["name"]
             / "clientFilesElement"
         ).as_posix()
         client_files_extensions_url = {
             extension: (
-                pathlib.Path(data["options"]["base_url"])
-                / "elementExtensions"
+                pathlib.Path(data["options"]["course_element_extension_files_url"])
                 / element_info["name"]
                 / extension
                 / "clientFilesExtension"

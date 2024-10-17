@@ -8,7 +8,7 @@ import { IdSchema } from '../lib/db-types.js';
 
 import { fetchCheerio, getCSRFToken } from './helperClient.js';
 import * as helperServer from './helperServer.js';
-import { AuthUser, withUser } from './utils/auth.js';
+import { type AuthUser, withUser } from './utils/auth.js';
 
 const sql = loadSqlEquiv(import.meta.url);
 
@@ -18,6 +18,7 @@ const studentUser: AuthUser = {
   uid: 'student@example.com',
   name: 'Example Student',
   uin: 'student',
+  email: 'student@example.com',
 };
 
 describe('Instructor force-breaking variants', () => {

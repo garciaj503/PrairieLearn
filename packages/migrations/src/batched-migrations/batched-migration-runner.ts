@@ -6,15 +6,15 @@ import { loadSqlEquiv, queryAsync, queryRow, queryOptionalRow } from '@prairiele
 
 import {
   BatchedMigrationJobRowSchema,
-  BatchedMigrationJobStatus,
-  BatchedMigrationJobRow,
+  type BatchedMigrationJobStatus,
+  type BatchedMigrationJobRow,
 } from './batched-migration-job.js';
 import {
-  BatchedMigrationStatus,
-  BatchedMigrationRow,
+  type BatchedMigrationStatus,
+  type BatchedMigrationRow,
   updateBatchedMigrationStatus,
   BatchedMigrationStatusSchema,
-  BatchedMigrationImplementation,
+  type BatchedMigrationImplementation,
 } from './batched-migration.js';
 
 const sql = loadSqlEquiv(import.meta.filename);
@@ -76,7 +76,7 @@ export class BatchedMigrationRunner {
     // Safety check: if there are any pending jobs, don't mark this
     // migration as finished.
     if (await this.hasIncompleteJobs(migration)) {
-      this.log(`Incomplete jobs found, not marking as finished`);
+      this.log('Incomplete jobs found, not marking as finished');
       return;
     }
 

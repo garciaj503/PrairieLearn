@@ -1040,6 +1040,9 @@ mechanicsObjects.LatexText = fabric.util.createClass(fabric.Object, {
         if (new_text !== null) {
           this.label = new_text;
           this.gen_text(this.parse(new_text), options);
+
+          // Fire an event to ensure that the text is updated in the submission data.
+          this.fire('modified');
         }
       });
     }
@@ -2925,7 +2928,7 @@ mechanicsObjects.byType['pl-arc-vector'] = class extends PLDrawingBaseElement {
   }
 
   static get_button_icon(options) {
-    if (options['clockwise-direction']) {
+    if (options['clockwiseDirection']) {
       return 'pl-arc-vector-CW';
     } else {
       return 'pl-arc-vector-CCW';
@@ -2933,7 +2936,7 @@ mechanicsObjects.byType['pl-arc-vector'] = class extends PLDrawingBaseElement {
   }
 
   static get_button_tooltip(options) {
-    if (options['clockwise-direction']) {
+    if (options['clockwiseDirection']) {
       return 'Add clockwise arc vector';
     } else {
       return 'Add counterclockwise arc vector';
@@ -3261,9 +3264,9 @@ mechanicsObjects.byType['pl-distributed-load'] = class extends PLDrawingBaseElem
       var initObjTop = obj.top;
 
       var modify = function (subObj) {
-        (subObj.left = initSubObjLeft + obj.left - initObjLeft),
-          (subObj.top = initSubObjTop + obj.top - initObjTop),
-          (subObj.range = obj.range);
+        subObj.left = initSubObjLeft + obj.left - initObjLeft;
+        subObj.top = initSubObjTop + obj.top - initObjTop;
+        subObj.range = obj.range;
         subObj.angle = obj.angle;
         subObj.flipped = obj.flipped;
       };

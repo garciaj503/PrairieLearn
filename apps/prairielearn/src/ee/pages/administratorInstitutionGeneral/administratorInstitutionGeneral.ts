@@ -60,8 +60,8 @@ router.post(
             long_name: req.body.long_name,
             display_timezone: req.body.display_timezone,
             uid_regexp: req.body.uid_regexp,
-            yearly_enrollment_limit: req.body.yearly_enrollment_limit,
-            course_instance_enrollment_limit: req.body.course_instance_enrollment_limit,
+            yearly_enrollment_limit: req.body.yearly_enrollment_limit || null,
+            course_instance_enrollment_limit: req.body.course_instance_enrollment_limit || null,
           },
           InstitutionSchema,
         );
@@ -75,7 +75,7 @@ router.post(
           row_id: req.params.institution_id,
         });
       });
-      flash('success', 'Successfully updated enrollment limits.');
+      flash('success', 'Successfully updated institution settings.');
       res.redirect(req.originalUrl);
     } else if (req.body.__action === 'update_plans') {
       const desiredPlans = parseDesiredPlanGrants({
